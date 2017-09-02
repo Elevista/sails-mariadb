@@ -1,7 +1,7 @@
 const {sails} = global
 const co = require('co')
 const mysql = require('mysql')
-const connInfo = sails && sails.config.MariaDBInfo || sails.config.connections.MariaDBInfo
+const connInfo = sails && sails.config.MariaDBInfo || sails.config.connections.MariaDBInfo  // eslint-disable-line no-mixed-operators
 if (!connInfo) return
 
 const connectionPool = mysql.createPool(connInfo)
