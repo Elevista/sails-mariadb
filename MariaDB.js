@@ -31,12 +31,12 @@ function promisifyConnection (connection) {
   return {
     query (sql, params) {
       let [sqlString, values] = parseSql(sql, params)
-      return promisify(connection.query, connection)(sqlString, values).catch(error => Promise.reject([sql, params, error]))
+      return promisify(connection.query, connection)(sqlString, values).catch(error => Promise.reject(new Error([sql, params, error])))
     },
     beginTransaction: promisify(connection.beginTransaction, connection),
     commit: promisify(connection.commit, connection),
     rollback: promisify(connection.rollback, connection),
-    release: () => connection.release(),
+    release: () => connection.release()
   }
 }
 
@@ -54,11 +54,9 @@ module.exports = function (gen) {
       return res
     } catch (e) {
       let err = e
-      yield conn.rollback().catch(e => err = [err, e])
+      yield conn.rollback().catch(e => { err = [err, e] })
       conn.release()
       return Promise.reject(err)
     }
   }))
 }
-
-
