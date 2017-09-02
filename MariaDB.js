@@ -7,7 +7,7 @@ if (!connInfo) return
 const connectionPool = mysql.createPool(connInfo)
 
 const type = {':': '?', ';': '??'}
-const re = /([:;\$\#])([a-zA-Z_]+[a-zA-Z0-9_]*)/g
+const re = /([:;$#])([a-zA-Z_]+[a-zA-Z0-9_]*)/g
 
 function parseSql (str, params) {
   if (!params) return [str, []]
