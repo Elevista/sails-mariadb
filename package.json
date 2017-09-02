@@ -1,0 +1,12 @@
+{
+  "name": "sails-mariadb",
+  "version": "1.0.0",
+  "description": "mariadb service for sails.js server",
+  "main": "MariaDB.js",
+  "author": "Elevista",
+  "license": "MIT",
+  "dependencies": {
+    "co": "^4.6.0",
+    "mysql": "^2.14.1"
+  }
+}
