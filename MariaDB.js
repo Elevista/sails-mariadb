@@ -2,7 +2,7 @@ const {sails} = global
 const co = require('co')
 const mysql = require('mysql')
 const connInfo = sails && (sails.config.MariaDBInfo || sails.config.connections.MariaDBInfo)
-if (!connInfo) return
+if (!connInfo) throw new Error('sails-mariadb : no MariaDBInfo')
 
 const connectionPool = mysql.createPool(connInfo)
 
