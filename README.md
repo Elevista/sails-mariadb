@@ -41,12 +41,30 @@ MariaDB(function * (conn) {
 ```
 [co](https://www.npmjs.com/package/co) was used. same usage.
 
-`conn.query` returns promise.  
 In generator function, all queries are in transaction.  
 And will auto commit transaction if all promises are resolved in function  
 and auto rollback if there's any promise rejection in function.(only promises with yield)
 
 query result is same as [mysql](https://www.npmjs.com/package/mysql)
+
+### Connection Object Structure
+````
+└── conn
+    ├── beginTransaction : Promise
+    ├── changeUser : Promise
+    ├── commit : Promise
+    ├── destroy
+    ├── on : Promise
+    ├── ping : Promise
+    ├── query : Promise
+    ├── release
+    ├── rollback : Promise
+    ├── prototype : PoolConnection (original connection from mysql module)
+    └── (prototype) : PoolConnection (original connection from mysql module)
+````
+*NOTE: If want to call that not own method of this object,  
+please use 'conn.prototype.foo(...args)'*
+
 
 ## Query Statement
 `conn.query(sql, params)`  
