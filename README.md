@@ -27,7 +27,7 @@ module.exports.connections = {
 ```
 or sails.config.MariaDBInfo(higher priority)
 
-node [mysql](https://www.npmjs.com/package/mysql) was used.  
+This module is based on node [mysql](https://www.npmjs.com/package/mysql).
 same configuration
 
 **In sails controller**
@@ -39,7 +39,7 @@ MariaDB(function * (conn) {
   return {rows, affectedRows: res.affectedRows}
 }).then(r => console.log(r), e => console.error(e))
 ```
-[co](https://www.npmjs.com/package/co) was used. same usage.
+This function is based on [co](https://www.npmjs.com/package/co). same usage.
 
 In generator function, all queries are in transaction.  
 And will auto commit transaction if all promises are resolved in function  
