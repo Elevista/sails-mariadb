@@ -1,6 +1,6 @@
 {
   "name": "sails-mariadb",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "description": "MariaDB service for sails.js server",
   "main": "MariaDB.js",
   "author": "Elevista",
