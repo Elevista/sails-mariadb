@@ -4,6 +4,7 @@ const mysql = require('mysql')
 const connInfo = sails && (sails.config.MariaDBInfo || sails.config.connections.MariaDBInfo)
 if (!connInfo) throw new Error('sails-mariadb : no MariaDBInfo')
 
+const _config = {useStream: false}
 const connectionPool = mysql.createPool(connInfo)
 
 const type = {':': '?', ';': '??'}
@@ -21,19 +22,47 @@ function parseSql (str, params) {
   return [sql, values]
 }
 
+function assignDeep (src, ...targets) {
+  for (let target of targets) {
+    if (!(target instanceof Object)) continue
+    for (let key of Object.keys(target)) {
+      let [v1, v2] = [src[key], target[key]]
+      if (v1 instanceof Object && v2 instanceof Object) assignDeep(v1, v2)
+      else src[key] = v2
+    }
+  }
+  return src
+}
+
 function promisify (that, fn) {
   return (...args) => new Promise((resolve, reject) =>
-    fn.apply(that, [...args, (err, result) => err ? reject(err) : resolve(result)])
+    fn.call(that, ...args, (err, res) => err ? reject(err) : resolve(res))
   )
 }
 
-function promisifyConnection (connection) {
+function promisifyConnection (connection, config) {
   if (connection.hasOwnProperty('prototype')) return connection
   let {beginTransaction, commit, rollback, query, changeUser, on, ping, release, destroy} = connection
   let _ = fn => promisify(connection, fn)
   let that = fn => (...args) => fn.apply(connection, args)
+  let stream = (...args) => new Promise((resolve, reject) => {
+    let ret = []
+    // mysqljs : "Please note that the interface for streaming multiple statement queries is experimental..."
+    query.call(connection, ...args)
+      .on('fields', function (fields, index = 0) {
+        if (config.useStream.fieldsHandler) config.useStream.fieldsHandler(fields)
+        ret[index] = []
+      })
+      .on('result', function (row, index = 0) {
+        if (config.useStream.rowHandler) config.useStream.rowHandler(row)
+        if (ret[index]) ret[index].push(row)
+        else ret[index] = row
+      })
+      .on('end', () => resolve(ret.length > 1 ? ret : ret.pop()))
+      .on('error', reject)
+  })
 
-  let _query = _(query)
+  let _query = config.useStream ? stream : _(query)
   return Object.assign(Object.create(connection, {prototype: {value: connection}}), {
     _promisify: _,
     _bind: that,
@@ -55,15 +84,16 @@ function isPromise (obj) { // from 'co'
   return obj && typeof obj.then === 'function'
 }
 
-function MariaDB (gen) {
+function MariaDB (gen, config) {
+  let cfg = assignDeep({}, _config, config)
   return co(function * () {
     let connection = yield promisify(connectionPool, connectionPool.getConnection)()
-    let conn = promisifyConnection(connection)
+    let conn = promisifyConnection(connection, cfg)
     yield conn.beginTransaction()
     return conn
-  }).then(conn => co(function * () {
+  }).then(conn => co.call(this, function * () {
     try {
-      let res = yield * gen(conn)
+      let res = yield * gen.call(this, conn)
       if (isPromise(res)) res = yield res
       yield conn.commit()
       conn.release()
@@ -81,3 +111,4 @@ module.exports = MariaDB
 module.exports.MariaDB = MariaDB
 module.exports.MariaDBInfo = connInfo
 module.exports.mysql = mysql
+module.exports.global = _config

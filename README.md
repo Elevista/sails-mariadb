@@ -75,6 +75,34 @@ In `sql` string
 * `#variableName` - replace `#variableName` as `params.variableName` with raw string in sql string. **(unsafe!)**
 
 
+## Config
+```js
+const config = {
+  useStream: { // default : false
+    fieldsHandler (fields) {
+      // handle fields (if exist)
+    },
+    rowHandler (row) {
+      // handle a row
+    }
+  }
+}
+```
+
+### Global Config
+```js
+const MariaDB = require('sails-mariadb')
+MairaDB.config.useStream = {/* ... */}
+```
+
+### Instance Config
+```js
+const MariaDB = require('sails-mariadb')
+MariaDB(function * (conn) {
+  // ...
+}, {useStream: {/* ... */}})
+```
+
 ## License
 The MIT License (MIT)  
 Copyright (c) 2017 Elevista
