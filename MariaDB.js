@@ -54,7 +54,7 @@ function promisifyConnection (connection, config) {
         ret[index] = []
       })
       .on('result', function (row, index = 0) {
-        if (config.useStream.rowHandler) config.useStream.rowHandler(row)
+        if (config.useStream.rowHandler) return config.useStream.rowHandler(row)
         if (ret[index]) ret[index].push(row)
         else ret[index] = row
       })
