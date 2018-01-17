@@ -1,11 +1,23 @@
-const {sails} = global
 const co = require('co')
 const mysql = require('mysql')
-const connInfo = sails && (sails.config.MariaDBInfo || sails.config.connections.MariaDBInfo)
-if (!connInfo) throw new Error('sails-mariadb : no MariaDBInfo')
-
 const _config = {useStream: false}
-const connectionPool = mysql.createPool(connInfo)
+
+function Pool () {}
+
+Pool.prototype = {
+  createPool () {
+    let {sails: {config} = {}} = global
+    let connInfo = config && (config.MariaDBInfo || config.connections.MariaDBInfo)
+    if (!connInfo) throw new Error('sails-mariadb : no MariaDBInfo')
+    let pool = mysql.createPool(connInfo)
+    this.getConnection = promisify(pool, pool.getConnection) // Overriding
+  },
+  getConnection () {
+    this.createPool()
+    return this.getConnection()
+  }
+}
+let pool = new Pool()
 
 const type = {':': '?', ';': '??'}
 const re = /([:;$#])([a-zA-Z_]+[a-zA-Z0-9_]*)/g
@@ -45,7 +57,7 @@ function promisifyConnection (connection, config) {
   let {beginTransaction, commit, rollback, query, changeUser, on, ping, release, destroy} = connection
   let _ = fn => promisify(connection, fn)
   let that = fn => (...args) => fn.apply(connection, args)
-  let stream = (...args) => new Promise((resolve, reject) => {
+  let streamQuery = (...args) => new Promise((resolve, reject) => {
     let ret = []
     // mysqljs : "Please note that the interface for streaming multiple statement queries is experimental..."
     query.call(connection, ...args)
@@ -62,7 +74,7 @@ function promisifyConnection (connection, config) {
       .on('error', reject)
   })
 
-  let _query = config.useStream ? stream : _(query)
+  let _query = config.useStream ? streamQuery : _(query)
   return Object.assign(Object.create(connection, {prototype: {value: connection}}), {
     _promisify: _,
     _bind: that,
@@ -87,7 +99,7 @@ function isPromise (obj) { // from 'co'
 function MariaDB (gen, config) {
   let cfg = assignDeep({}, _config, config)
   return co(function * () {
-    let connection = yield promisify(connectionPool, connectionPool.getConnection)()
+    let connection = yield pool.getConnection()
     let conn = promisifyConnection(connection, cfg)
     yield conn.beginTransaction()
     return conn
@@ -109,6 +121,5 @@ function MariaDB (gen, config) {
 
 module.exports = MariaDB
 module.exports.MariaDB = MariaDB
-module.exports.MariaDBInfo = connInfo
 module.exports.mysql = mysql
 module.exports.global = _config
