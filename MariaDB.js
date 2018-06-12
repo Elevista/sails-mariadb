@@ -6,8 +6,9 @@ function Pool () {}
 
 Pool.prototype = {
   createPool () {
-    let {sails: {config} = {}} = global
-    let connInfo = config && (config.MariaDBInfo || config.connections.MariaDBInfo)
+    let {sails: {config, version} = {}} = global
+    const sailsMajorVersion = Number(version.split('.')[0])
+    let connInfo = config && (config.MariaDBInfo || sailsMajorVersion === 0 ? config.connections.MariaDBInfo : (config.datastores.default.MariaDBInfo || config.datastores.MariaDBInfo))
     if (!connInfo) throw new Error('sails-mariadb : no MariaDBInfo')
     let pool = mysql.createPool(connInfo)
     this.getConnection = promisify(pool, pool.getConnection) // Overriding
